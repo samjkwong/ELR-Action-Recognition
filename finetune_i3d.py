@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
 * Contributor: Samuel Kwong
-* Usage: python finetune_i3d.py --lr=LR, --bs=BS, --stride=STRIDE, --clip_size=CLIP_SIZE, --checkpoint_path=''
+* Usage: python finetune_i3d.py --lr=LR --bs=BS --stride=STRIDE --clip_size=CLIP_SIZE --checkpoint_path=''
 """
 
 import os
 import sys
 import argparse
 import datetime
+import time
 
 import torch
 import torch.nn as nn
@@ -67,6 +68,7 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs):
     
     # ------------------------- TRAIN ------------------------------
     for epoch in range(start_epoch, num_epochs):
+        start_time = time.time()
         print('-' * 50)
         print('EPOCH {}/{}'.format(epoch, num_epochs))
         print('-' * 50)
@@ -103,13 +105,13 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs):
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
-                    print('Step {} {} loss: {:.4f}'.format(steps, phase, loss))
-                    if steps % 10 == 0:
-                        print('Step {} {} loss: {:.4f}'.format(steps, phase, loss))
+                    #if steps % 10 == 0:
+                    print('Epoch {} Step {} {} loss: {:.4f}'.format(epoch, steps, phase, loss))
                     steps += 1
                     
                 # metrics for validation
                 num_correct += torch.sum(pred_class_idx == labels, axis=0)
+                #start_time = time.time()
         
             # ----------------------- EVALUATE ACCURACY ---------------------------
             num_total = len(dataloaders[phase].dataset)
@@ -120,9 +122,12 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs):
                 print('{} accuracy: {:.4f}'.format(phase, accuracy))
                 print('-' * 50)
                 save_checkpoint(i3d, optimizer, loss, save_dir, epoch, steps) # save checkpoint after epoch!
+                elapsed_time = time.time() - start_time
+                print('Epoch {} elapsed time: {}'.format(epoch, time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
             else:
                 writer.add_scalar('accuracy/val', accuracy, epoch)
                 print('{} accuracy: {:.4f}'.format(phase, accuracy))
+                print('Validation elapsed time: {}'.format(epoch, time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
             # --------------------------------------------------------------------
         
         #lr_sched.step() # step after epoch
@@ -138,14 +143,14 @@ def get_dataloaders(root, stride, clip_size, batch_size):
                                           transforms.ToTensor()
                                          ])
     train_dataset = UCF_Dataset(root, split_file='train_split.txt', clip_size=clip_size, stride=stride, is_val=False, transform=train_transforms)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)    
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=16, pin_memory=True)    
     print('Getting validation dataset...')
     test_transforms = transforms.Compose([transforms.Resize((12,16)),
                                           transforms.Resize((224,224)),
                                           transforms.ToTensor()
                                          ])
-    val_dataset = UCF_Dataset(root, split_file='val_split.txt', clip_size=clip_size, stride=1, is_val=True, transform=test_transforms)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=0, pin_memory=True)    
+    val_dataset = UCF_Dataset(root, split_file='val_split.txt', clip_size=clip_size, stride=stride, is_val=True, transform=test_transforms)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=16, pin_memory=True)    
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
     return dataloaders
