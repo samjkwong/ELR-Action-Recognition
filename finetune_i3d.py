@@ -32,9 +32,9 @@ parser.add_argument('--checkpoint_path', type=str, help='path to saved checkpoin
 args = parser.parse_args()
 
 
-def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs):
+def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, train_split, val_split):
     writer = SummaryWriter()
-    dataloaders = get_dataloaders(root, stride, clip_size, batch_size) 
+    dataloaders = get_dataloaders(root, stride, clip_size, batch_size, train_split, val_split) 
     
     # ----------------------- LOAD MODEL ---------------------------
     print('Loading model...')
@@ -105,8 +105,8 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs):
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
-                    #if steps % 10 == 0:
-                    print('Epoch {} Step {} {} loss: {:.4f}'.format(epoch, steps, phase, loss))
+                    if steps % 10 == 0:
+                        print('Epoch {} Step {} {} loss: {:.4f}'.format(epoch, steps, phase, loss))
                     steps += 1
                     
                 # metrics for validation
@@ -135,20 +135,20 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs):
     # ---------------------------------------------------------------------------------- 
 
 # ------------------------------------- HELPERS ------------------------------------------
-def get_dataloaders(root, stride, clip_size, batch_size):
+def get_dataloaders(root, stride, clip_size, batch_size, train_split, val_split):
     print('Getting training dataset...')
     train_transforms = transforms.Compose([transforms.Resize((12,16)),
                                           transforms.Resize((224,224)),
                                           transforms.ToTensor()
                                          ])
-    train_dataset = UCF_Dataset(root, split_file='train_split.txt', clip_size=clip_size, stride=stride, is_val=False, transform=train_transforms)
+    train_dataset = UCF_Dataset(root, split_file=train_split, clip_size=clip_size, stride=stride, is_val=False, transform=train_transforms)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
     print('Getting validation dataset...')
     test_transforms = transforms.Compose([transforms.Resize((12,16)),
                                           transforms.Resize((224,224)),
                                           transforms.ToTensor()
                                          ])
-    val_dataset = UCF_Dataset(root, split_file='val_split.txt', clip_size=clip_size, stride=stride, is_val=True, transform=test_transforms)
+    val_dataset = UCF_Dataset(root, split_file=val_split, clip_size=clip_size, stride=stride, is_val=True, transform=test_transforms)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)    
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
@@ -192,5 +192,6 @@ if __name__ == '__main__':
             f.write('MODEL = {}\nLR = {}\nBATCH_SIZE = {}\nSTRIDE = {}\nCLIP_SIZE = {}\nEPOCHS = {}'.format('I3D', LR, BATCH_SIZE, STRIDE, CLIP_SIZE, NUM_EPOCHS))
         
         train(init_lr=LR, root='/vision/group/video/scratch/ucf101_old/two_stream_flow_frame', batch_size=BATCH_SIZE,
-              save_dir=SAVE_DIR, stride=STRIDE, clip_size=CLIP_SIZE, num_epochs=NUM_EPOCHS)
+              save_dir=SAVE_DIR, stride=STRIDE, clip_size=CLIP_SIZE,
+              num_epochs=NUM_EPOCHS, train_split='ucf_train_split.txt', val_split='ucf_val_split.txt')
 
