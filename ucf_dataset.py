@@ -18,7 +18,7 @@ def make_dataset(split_file):
         for line in f:
             line = line.split()
             path, action_idx = line[0], line[1]
-            dataset.append((path, int(action_idx)))
+            dataset.append((path, int(action_idx) - 1))
     return dataset
 
 class UCF_Dataset(torch.utils.data.Dataset):
