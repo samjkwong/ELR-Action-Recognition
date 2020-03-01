@@ -63,6 +63,22 @@ class UCF_Dataset(torch.utils.data.Dataset):
             num_frames_necessary = num_frames
 
         # pick frames
+        
+        # random offset sampling
+        #offset = 0
+        #if num_frames_necessary > num_frames:
+        #    # Pad last frame if video is shorter than necessary
+        #    frame_names += [frame_names[-1]] * \
+        #        (num_frames_necessary - num_frames)
+        #elif num_frames_necessary < num_frames:
+        #    # If there are more frames, then sample starting offset
+        #    diff = (num_frames - num_frames_necessary)
+        #    # temporal augmentation
+        #    if not self.is_val:
+        #        offset = np.random.randint(0, diff)
+        #frame_names = frame_names[offset:num_frames_necessary+offset:self.stride]
+        
+        # middle of video offset sampling for both train and val
         offset = 0
         if num_frames_necessary > num_frames:
             # Pad last frame if video is shorter than necessary
@@ -71,9 +87,7 @@ class UCF_Dataset(torch.utils.data.Dataset):
         elif num_frames_necessary < num_frames:
             # If there are more frames, then sample starting offset
             diff = (num_frames - num_frames_necessary)
-            # temporal augmentation
-            if not self.is_val:
-                offset = np.random.randint(0, diff)
+            offset = diff // 2
         frame_names = frame_names[offset:num_frames_necessary+offset:self.stride]
         return frame_names
 
