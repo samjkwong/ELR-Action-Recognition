@@ -57,10 +57,10 @@ class UCF_Dataset(torch.utils.data.Dataset):
         num_frames = len(frame_names)
 
         # set number of necessary frames
-        if not self.is_val:
-            num_frames_necessary = self.clip_size * self.stride
-        else:
-            num_frames_necessary = num_frames
+        #if not self.is_val:
+        num_frames_necessary = self.clip_size * self.stride
+        #else:
+        #    num_frames_necessary = num_frames # only works with batch size 1
 
         # pick frames
         
