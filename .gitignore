@@ -2,3 +2,4 @@ checkpoints*
 runs*
 __pycache__
 *.swp
+*.pt
