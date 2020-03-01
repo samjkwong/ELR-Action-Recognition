@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 * Contributor: Samuel Kwong
-* Usage: python finetune_i3d.py --lr=LR --bs=BS --stride=STRIDE --clip_size=CLIP_SIZE --checkpoint_path=''
+* Example usage: python finetune_i3d.py --lr=1e-4 --bs=16 --stride=2 --clip_size=64 --checkpoint_path='' --test=False
 """
 
 import os
