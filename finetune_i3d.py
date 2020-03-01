@@ -111,18 +111,17 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs):
                     
                 # metrics for validation
                 num_correct += torch.sum(pred_class_idx == labels, axis=0)
-                #start_time = time.time()
         
             # ----------------------- EVALUATE ACCURACY ---------------------------
             num_total = len(dataloaders[phase].dataset)
             accuracy = float(num_correct) / float(num_total)
+            elapsed_time = time.time() - start_time
             if phase == 'train':
                 writer.add_scalar('accuracy/train', accuracy, epoch)
                 print('-' * 50)
                 print('{} accuracy: {:.4f}'.format(phase, accuracy))
                 print('-' * 50)
                 save_checkpoint(i3d, optimizer, loss, save_dir, epoch, steps) # save checkpoint after epoch!
-                elapsed_time = time.time() - start_time
                 print('Epoch {} elapsed time: {}'.format(epoch, time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
             else:
                 writer.add_scalar('accuracy/val', accuracy, epoch)
@@ -143,14 +142,14 @@ def get_dataloaders(root, stride, clip_size, batch_size):
                                           transforms.ToTensor()
                                          ])
     train_dataset = UCF_Dataset(root, split_file='train_split.txt', clip_size=clip_size, stride=stride, is_val=False, transform=train_transforms)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=16, pin_memory=True)    
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
     print('Getting validation dataset...')
     test_transforms = transforms.Compose([transforms.Resize((12,16)),
                                           transforms.Resize((224,224)),
                                           transforms.ToTensor()
                                          ])
     val_dataset = UCF_Dataset(root, split_file='val_split.txt', clip_size=clip_size, stride=stride, is_val=True, transform=test_transforms)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=16, pin_memory=True)    
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)    
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
     return dataloaders
