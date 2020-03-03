@@ -183,7 +183,7 @@ if __name__ == '__main__':
         BATCH_SIZE = args.bs
         STRIDE = args.stride # temporal stride for sampling
         CLIP_SIZE = args.clip_size # total number frames to sample for inputs
-        NUM_EPOCHS = 200
+        NUM_EPOCHS = 50
         SAVE_DIR = './checkpoints-{}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}/'.format(now.year, now.month, now.day, now.hour, now.minute, now.second)
 
         if not os.path.exists(SAVE_DIR):
