@@ -30,15 +30,21 @@ class UCF_Dataset(torch.utils.data.Dataset):
         self.stride = stride 
         self.is_val = is_val
         self.transform = transform
+        self.empty_img = self.transform(self.loader('/vision2/u/samkwong/ELR-Action-Recognition/empty.jpg'))
 
     def __getitem__(self, index):
         path, action_idx = self.dataset[index]
         img_paths = self.get_frame_names(self.root + '/' + path) # where img dirs are stored
 
         imgs = []
+        prev_img = self.empty_img
         for img_path in img_paths:
-            img = self.loader(img_path)
-            img = self.transform(img)
+            try:
+                img = self.loader(img_path)
+                img = self.transform(img)
+                prev_img = img
+            except: # corrupted/empty file
+                img = prev_img
             imgs.append(torch.unsqueeze(img, 0))
 
         # format data to torch
@@ -64,21 +70,7 @@ class UCF_Dataset(torch.utils.data.Dataset):
 
         # pick frames
         
-        # random offset sampling
-        #offset = 0
-        #if num_frames_necessary > num_frames:
-        #    # Pad last frame if video is shorter than necessary
-        #    frame_names += [frame_names[-1]] * \
-        #        (num_frames_necessary - num_frames)
-        #elif num_frames_necessary < num_frames:
-        #    # If there are more frames, then sample starting offset
-        #    diff = (num_frames - num_frames_necessary)
-        #    # temporal augmentation
-        #    if not self.is_val:
-        #        offset = np.random.randint(0, diff)
-        #frame_names = frame_names[offset:num_frames_necessary+offset:self.stride]
-        
-        # middle of video offset sampling for both train and val
+        # random offset sampling for train, center sampling for val
         offset = 0
         if num_frames_necessary > num_frames:
             # Pad last frame if video is shorter than necessary
@@ -87,7 +79,23 @@ class UCF_Dataset(torch.utils.data.Dataset):
         elif num_frames_necessary < num_frames:
             # If there are more frames, then sample starting offset
             diff = (num_frames - num_frames_necessary)
-            offset = diff // 2
+            # temporal augmentation
+            if not self.is_val:
+                offset = np.random.randint(0, diff)
+            else:
+                offset = diff // 2
         frame_names = frame_names[offset:num_frames_necessary+offset:self.stride]
+        
+        # middle of video offset sampling for both train and val
+        #offset = 0
+        #if num_frames_necessary > num_frames:
+        #    # Pad last frame if video is shorter than necessary
+        #    frame_names += [frame_names[-1]] * \
+        #        (num_frames_necessary - num_frames)
+        #elif num_frames_necessary < num_frames:
+        #    # If there are more frames, then sample starting offset
+        #    diff = (num_frames - num_frames_necessary)
+        #    offset = diff // 2
+        #frame_names = frame_names[offset:num_frames_necessary+offset:self.stride]
         return frame_names
 
