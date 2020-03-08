@@ -95,7 +95,7 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
                         per_frame_logits = i3d(inputs)
 
                 # upsample to input size
-                per_frame_logits = F.interpolate(per_frame_logits, t, mode='linear') # shape: B x Classes x T
+                #per_frame_logits = F.interpolate(per_frame_logits, t, mode='linear') # shape: B x Classes x T
                 mean_frame_logits = torch.mean(per_frame_logits, dim=2) # shape: B x Classes; avg across frames to get single pred per clip
                 _, pred_class_idx = torch.max(mean_frame_logits, dim=1) # shape: B; values are class indices
 
