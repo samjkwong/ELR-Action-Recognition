@@ -116,14 +116,13 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
                 labels = labels.to(device=device)
 
                 if phase == 'train':
-                    per_frame_logits_hr = i3d_hr(inputs_hr)
-                    per_frame_logits_lr = i3d_lr(inputs_lr)
+                    per_frame_logits_hr, feat_hr = i3d_hr(inputs_hr, return_feat=True)
+                    per_frame_logits_lr, feat_lr = i3d_lr(inputs_lr, return_feat=True)
                 else:
                     with torch.no_grad():
-                        per_frame_logits_hr = i3d_hr(inputs_hr)
-                        per_frame_logits_lr = i3d_lr(inputs_lr)
-                #pdb.set_trace()
-
+                        per_frame_logits_hr, feat_hr = i3d_hr(inputs_hr, return_feat=True)
+                        per_frame_logits_lr, feat_lr = i3d_lr(inputs_lr, return_feat=True)
+                
                 # upsample to input size
                 #per_frame_logits_hr = F.interpolate(per_frame_logits_hr, t, mode='linear') # shape: B x Classes x T
                 mean_frame_logits_hr = torch.mean(per_frame_logits_hr, dim=2) # shape: B x Classes; avg across frames to get single pred per clip
@@ -137,11 +136,11 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
                     hr_ce_loss = F.cross_entropy(mean_frame_logits_hr, labels)
                     lr_ce_loss = F.cross_entropy(mean_frame_logits_lr, labels)
 
-                    mean_frame_logits_hr = torch.nn.LogSoftmax(dim=1)(mean_frame_logits_hr)
-                    mean_frame_logits_lr = torch.nn.Softmax(dim=1)(mean_frame_logits_lr)
-                    kl_loss = torch.nn.KLDivLoss(reduction='batchmean')(mean_frame_logits_hr, mean_frame_logits_lr)
+                    feat_hr = F.avg_pool3d(feat_hr, (2, 7, 7), (1, 1, 1)).squeeze()
+                    feat_lr = F.avg_pool3d(feat_lr, (2, 7, 7), (1, 1, 1)).squeeze()
+                    l2_loss = torch.nn.MSELoss()(feat_hr, feat_lr)
 
-                    loss = hr_ce_loss + lr_ce_loss + kl_loss
+                    loss = hr_ce_loss + lr_ce_loss + l2_loss
 
                     #writer.add_scalar('loss/train', loss, steps)
                     optimizer.zero_grad()
@@ -233,7 +232,7 @@ if __name__ == '__main__':
         STRIDE = args.stride # temporal stride for sampling
         CLIP_SIZE = args.clip_size # total number frames to sample for inputs
         NUM_EPOCHS = 50
-        version_id = "kl"
+        version_id = "l2"
         SAVE_DIR = './checkpoints-{}-{}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}/'.format(version_id, now.year, now.month, now.day, now.hour, now.minute, now.second)
 
         if not os.path.exists(SAVE_DIR):

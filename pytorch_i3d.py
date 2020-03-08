@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+import pdb
 
 import numpy as np
 
@@ -321,17 +322,23 @@ class InceptionI3d(nn.Module):
         for k in self.end_points.keys():
             self.add_module(k, self.end_points[k])
         
-    def forward(self, x):
+    def forward(self, x, return_feat=False):
         for end_point in self.VALID_ENDPOINTS:
             if end_point in self.end_points:
                 x = self._modules[end_point](x) # use _modules to work with dataparallel
-
+       
+        if return_feat:
+            feat = x
+    
         x = self.logits(self.dropout(self.avg_pool(x)))
         if self._spatial_squeeze:
             logits = x.squeeze(3).squeeze(3)
         # logits is batch X time X classes, which is what we want to work with
-        return logits
-        
+       
+        if return_feat:
+            return logits, feat
+        else:
+            return logits
 
     def extract_features(self, x):
         for end_point in self.VALID_ENDPOINTS:
