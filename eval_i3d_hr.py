@@ -105,12 +105,11 @@ def test(root, batch_size, stride, clip_size, test_split, num_workers):
 # ------------------------------------- HELPERS ------------------------------------------
 def get_dataloader(root, stride, clip_size, batch_size, test_split, num_workers):
     print('Getting testing dataset...')
-    test_transforms = transforms.Compose([transforms.Resize((12,16)),
-                                          transforms.Resize((224,224)),
+    test_transforms = transforms.Compose([transforms.Resize((224,224)),
                                           transforms.ToTensor()
                                          ])
-    test_dataset = UCF_Dataset(root, split_file=test_split, clip_size=clip_size, stride=stride, is_val=False, transform=test_transforms)
-    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
+    test_dataset = UCF_Dataset(root, split_file=test_split, clip_size=clip_size, stride=stride, is_val=True, transform=test_transforms)
+    test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
 
     return test_dataloader
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 * Contributor: Samuel Kwong
-* Example usage: python finetune_i3d.py --lr=1e-4 --bs=16 --stride=1 --clip_size=64 --checkpoint_path=''
+* Example usage: python finetune_i3d.py --lr=1e-4 --bs=16 --stride=2 --clip_size=64 --checkpoint_path=''
 """
 
 import os
@@ -137,15 +137,13 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
 # ------------------------------------- HELPERS ------------------------------------------
 def get_dataloaders(root, stride, clip_size, batch_size, train_split, val_split):
     print('Getting training dataset...')
-    train_transforms = transforms.Compose([transforms.Resize((12,16)),
-                                          transforms.Resize((224,224)),
+    train_transforms = transforms.Compose([transforms.Resize((224,224)),
                                           transforms.ToTensor()
                                          ])
     train_dataset = UCF_Dataset(root, split_file=train_split, clip_size=clip_size, stride=stride, is_val=False, transform=train_transforms)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
     print('Getting validation dataset...')
-    test_transforms = transforms.Compose([transforms.Resize((12,16)),
-                                          transforms.Resize((224,224)),
+    test_transforms = transforms.Compose([transforms.Resize((224,224)),
                                           transforms.ToTensor()
                                          ])
     val_dataset = UCF_Dataset(root, split_file=val_split, clip_size=clip_size, stride=stride, is_val=True, transform=test_transforms)
@@ -183,7 +181,7 @@ if __name__ == '__main__':
         BATCH_SIZE = args.bs
         STRIDE = args.stride # temporal stride for sampling
         CLIP_SIZE = args.clip_size # total number frames to sample for inputs
-        NUM_EPOCHS = 50
+        NUM_EPOCHS = 200
         SAVE_DIR = './checkpoints-{}-{:02d}-{:02d}-{:02d}-{:02d}-{:02d}/'.format(now.year, now.month, now.day, now.hour, now.minute, now.second)
 
         if not os.path.exists(SAVE_DIR):
