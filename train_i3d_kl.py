@@ -17,7 +17,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim import lr_scheduler
 from torchvision import transforms
-#from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 from collections import OrderedDict
 
 import numpy as np
@@ -35,7 +35,7 @@ args = parser.parse_args()
 
 
 def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, train_split, val_split):
-    #writer = SummaryWriter()
+    writer = SummaryWriter()
     dataloaders = get_dataloaders(root, stride, clip_size, batch_size, train_split, val_split) 
     
     # ----------------------- LOAD MODEL ---------------------------
@@ -85,8 +85,8 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
     optimizer = optim.Adam(list(i3d_hr.parameters()) + list(i3d_lr.parameters()), lr=init_lr)
     #lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [30], gamma=0.1)
 
-    steps = 0 if not args.ckpt_hr else torch.load(args.ckpt_hr)['steps']
-    start_epoch = 0 if not args.ckpt_hr else torch.load(args.ckpt_hr)['epoch']
+    steps = 0 if not args.ckpt_lr else torch.load(args.ckpt_lr)['steps']
+    start_epoch = 0 if not args.ckpt_lr else torch.load(args.ckpt_lr)['epoch']
     # ----------------------------------------------------------------
     
     # ------------------------- TRAIN ------------------------------
@@ -98,7 +98,8 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
 
         for phase in ['train', 'val']:
             if phase == 'train':
-                i3d_hr.train(True)
+                #i3d_hr.train(True)
+                i3d_hr.train(False)
                 i3d_lr.train(True)
                 print('-'*10, 'TRAINING', '-'*10)
             else:
@@ -116,7 +117,8 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
                 labels = labels.to(device=device)
 
                 if phase == 'train':
-                    per_frame_logits_hr = i3d_hr(inputs_hr)
+                    with torch.no_grad():
+                        per_frame_logits_hr = i3d_hr(inputs_hr)
                     per_frame_logits_lr = i3d_lr(inputs_lr)
                 else:
                     with torch.no_grad():
@@ -143,7 +145,7 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
 
                     loss = hr_ce_loss + lr_ce_loss + kl_loss
 
-                    #writer.add_scalar('loss/train', loss, steps)
+                    writer.add_scalar('loss/train', loss, steps)
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
@@ -159,7 +161,7 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
             accuracy = float(num_correct) / float(num_total)
             elapsed_time = time.time() - start_time
             if phase == 'train':
-                #writer.add_scalar('accuracy/train', accuracy, epoch)
+                writer.add_scalar('accuracy/train', accuracy, epoch)
                 print('-' * 50)
                 print('{} accuracy: {:.4f}'.format(phase, accuracy))
                 print('-' * 50)
@@ -167,14 +169,14 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
                 save_checkpoint(i3d_lr, optimizer, loss, save_dir, epoch, steps, 'low') # save checkpoint after epoch!
                 print('Epoch {} elapsed time: {}'.format(epoch, time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
             else:
-                #writer.add_scalar('accuracy/val', accuracy, epoch)
+                writer.add_scalar('accuracy/val', accuracy, epoch)
                 print('{} accuracy: {:.4f}'.format(phase, accuracy))
                 print('Validation elapsed time: {}'.format(epoch, time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
             # --------------------------------------------------------------------
         
         #lr_sched.step() # step after epoch
         
-    #writer.close()
+    writer.close()
     # ---------------------------------------------------------------------------------- 
 
 # ------------------------------------- HELPERS ------------------------------------------
@@ -188,7 +190,7 @@ def get_dataloaders(root, stride, clip_size, batch_size, train_split, val_split)
                                             transforms.ToTensor()
                                             ])
     train_dataset = UCF_HLR_Dataset(root, split_file=train_split, clip_size=clip_size, stride=stride, is_val=False, lr_transform=train_lr_transforms, hr_transform=train_hr_transforms)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=16, pin_memory=True)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
     print('Getting validation dataset...')
     test_lr_transforms = transforms.Compose([transforms.Resize((12,16)),
                                           transforms.Resize((224,224)),
@@ -198,7 +200,7 @@ def get_dataloaders(root, stride, clip_size, batch_size, train_split, val_split)
                                             transforms.ToTensor()
                                             ])
     val_dataset = UCF_HLR_Dataset(root, split_file=val_split, clip_size=clip_size, stride=stride, is_val=True, lr_transform=test_lr_transforms, hr_transform=test_hr_transforms)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=16, pin_memory=True)    
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)    
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
     return dataloaders
@@ -239,7 +241,7 @@ if __name__ == '__main__':
         if not os.path.exists(SAVE_DIR):
             os.makedirs(SAVE_DIR)
         with open(SAVE_DIR + 'info.txt', 'w+') as f:
-            f.write('MODEL = {}\nLR = {}\nBATCH_SIZE = {}\nSTRIDE = {}\nCLIP_SIZE = {}\nEPOCHS = {}'.format('I3D', LR, BATCH_SIZE, STRIDE, CLIP_SIZE, NUM_EPOCHS))
+            f.write('MODEL = {}\nLR = {}\nBATCH_SIZE = {}\nSTRIDE = {}\nCLIP_SIZE = {}\nEPOCHS = {}'.format('I3D-distill-'+version_id, LR, BATCH_SIZE, STRIDE, CLIP_SIZE, NUM_EPOCHS))
         
         train(init_lr=LR, root='/vision/group/video/scratch/ucf101_old/two_stream_flow_frame', batch_size=BATCH_SIZE,
               save_dir=SAVE_DIR, stride=STRIDE, clip_size=CLIP_SIZE,
