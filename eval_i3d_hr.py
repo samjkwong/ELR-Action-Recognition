@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 * Contributor: Samuel Kwong
-* Example usage: python eval_i3d_hr.py --bs=16 --stride=1 --clip_size=250 --num-workers=4 --checkpoint_path=models/baseline-ucf.pt
+* Example usage: python eval_i3d_hr.py --bs=16 --stride=1 --clip_size=250 --num_workers=4 --checkpoint_path=models/baseline-ucf.pt
 """
 
 import os
