@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 * Contributor: Samuel Kwong
-* Example usage: python finetune_i3d.py --lr=1e-4 --bs=16 --stride=2 --clip_size=64 --ckpt_hr='' --ckpt_lr='''
+* Example usage: python train_i3d_kl.py --lr=1e-4 --bs=16 --stride=1 --clip_size=64 --ckpt_hr='' --ckpt_lr=''
 """
 
 import os
@@ -143,7 +143,10 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
                     mean_frame_logits_lr = torch.nn.Softmax(dim=1)(mean_frame_logits_lr)
                     kl_loss = torch.nn.KLDivLoss(reduction='batchmean')(mean_frame_logits_hr, mean_frame_logits_lr)
 
-                    loss = hr_ce_loss + lr_ce_loss + kl_loss
+                    #loss = hr_ce_loss + lr_ce_loss + kl_loss
+                    c1 = 1
+                    c2 = 10
+                    loss = c1*lr_ce_loss + c2*kl_loss
 
                     writer.add_scalar('loss/train', loss, steps)
                     optimizer.zero_grad()
@@ -165,7 +168,7 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
                 print('-' * 50)
                 print('{} accuracy: {:.4f}'.format(phase, accuracy))
                 print('-' * 50)
-                save_checkpoint(i3d_hr, optimizer, loss, save_dir, epoch, steps, 'high') # save checkpoint after epoch!
+                #save_checkpoint(i3d_hr, optimizer, loss, save_dir, epoch, steps, 'high') # save checkpoint after epoch!
                 save_checkpoint(i3d_lr, optimizer, loss, save_dir, epoch, steps, 'low') # save checkpoint after epoch!
                 print('Epoch {} elapsed time: {}'.format(epoch, time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
             else:
