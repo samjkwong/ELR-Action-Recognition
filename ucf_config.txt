@@ -1,0 +1,154 @@
+UCF-101 ELR-Action-Recognition
+
+Notes: baseline HR stride 4
+Epoch : test: (128 frames) 
+checkpoints-2020-03-17-13-15-54
+checkpoints-2020-03-17-15-26-24
+
+Notes: distill stride 4 12x16
+Epoch : test: (128 frames)
+checkpoints-kl-2020-03-17-19-14-25
+
+TODO
+Notes: baseline LR stride 4
+Epoch : test: (128 frames)
+
+Notes: baseline HR stride 2 12x16
+Epoch : test: (128 frames)
+Notes: distill stride 2 12x16
+Epoch : test: (128 frames)
+
+
+Completed experiments:
+
+Notes: baseline stride 2 12x16
+Epoch : test: (128 frames)
+checkpoints-2020-03-17-12-10-16
+
+
+Notes: baseline 24x32
+Epoch 19 test:  83.48 (128 frames)
+checkpoints-2020-03-16-14-45-19
+
+Notes: distill 24x32
+Epoch 32 test:  80.25 (128 frames)
+checkpoints-kl-2020-03-16-18-27-14
+sam2
+
+
+Notes: distill-kl, loss = 1*lr_ce_loss + 1.25*kl_loss
+Epoch 16: test: 69.47 (64 frames) 70.74 (128 frames) 64.97 (250 frames)
+Epoch 23: test:  69.28 (64 frames) 70.45 (128 frames) 65.85 (250 frames)
+Epoch 46: test: 69.76 (64 frames) 70.37 (128 frames) (250 frames)
+Epoch 50 test (128 frames)
+checkpoints-kl-2020-03-10-16-16-18
+checkpoints-kl-2020-03-15-21-50-15
+MODEL = I3D-distill-kl
+LR = 0.0001
+BATCH_SIZE = 16
+STRIDE = 1
+CLIP_SIZE = 64
+
+
+Notes: baseline LR, resolution 6x8
+Epoch 37 test: 46.7 (128 frames)
+Epoch 38 test: 43.8 (128 frames)
+checkpoints-2020-03-15-23-20-53
+
+Notes: distill-kl, resolution 6x8
+Epoch 38 test: 44.89 (128 frames)
+checkpoints-kl-2020-03-15-23-17-30
+
+
+Notes: distill-kl, loss = 1*lr_ce_loss + 2*kl_loss
+Epoch 20: test:  68.7 (64 frames) 69.63 (128 frames) 62.54 (250 frames)
+Epoch 35 test: (64 frames) (128 frames) (250 frames)
+checkpoints-kl-2020-03-11-15-42-23
+MODEL = I3D-distill-kl
+LR = 0.0001
+BATCH_SIZE = 16
+STRIDE = 1
+CLIP_SIZE = 64
+
+Notes: distill-kl, loss = 1*lr_ce_loss + 10*kl_loss
+Epoch 24: test: 67.22 (64 frames) 68.31 (128 frames) 62.99 (250 frames)
+checkpoints-kl-2020-03-11-15-55-38
+MODEL = I3D-distill-kl
+LR = 0.0001
+BATCH_SIZE = 16
+STRIDE = 1
+CLIP_SIZE = 64
+
+Notes: distill-kl, loss = 1*lr_ce_loss + 5*kl_loss
+Epoch 28: test: 69.63 (64 frames) 70.1 (128 frames) 64.84 (250 frames)
+checkpoints-kl-2020-03-10-23-52-15
+MODEL = I3D-distill-kl
+LR = 0.0001
+BATCH_SIZE = 16
+STRIDE = 1
+CLIP_SIZE = 64
+
+
+Note: random offset sampled, distill-kl
+Epoch 24: test: 68.54 (64 frames) 69.26 (128 frames) 64.90 (250 frames) 
+checkpoints-kl-2020-03-09-01-30-04
+MODEL = I3D-distill-kl
+LR = 0.0001
+BATCH_SIZE = 16
+STRIDE = 1
+CLIP_SIZE = 64
+
+Note: random offset sampled, LR data
+Epoch 30: test: 66.7 (64 frames) 68.25 (128 frames) 62.1 (250 frames) 
+checkpoints-2020-03-09-23-35-53
+MODEL = I3D
+LR = 0.0001
+BATCH_SIZE = 16
+STRIDE = 1
+CLIP_SIZE = 64
+
+Note: random offset sampled, HR data
+Epoch 10: train:99.69 val:98.01 test: 91.7 (64 frames) 92.68 (128 frames) 90.33 (250 frames)
+checkpoints-2020-03-08-20-19-28
+MODEL = I3D
+LR = 0.0001
+BATCH_SIZE = 16
+STRIDE = 1
+CLIP_SIZE = 64
+
+Note: center sampled, HR data
+Epoch 12: train:99.99 val:97.9 test: 92.84 (250 frames)
+checkpoints-2020-03-03-01-32-57
+MODEL = I3D
+LR = 0.0001
+BATCH_SIZE = 16
+STRIDE = 1
+CLIP_SIZE = 64
+
+Note: center sampled, LR data
+Epoch 16: train:99.59 val:91.4
+checkpoints-2020-03-02-22-12-29
+MODEL = I3D
+LR = 0.0001
+BATCH_SIZE = 16
+STRIDE = 1
+CLIP_SIZE = 64
+
+Note: center sampled, reported for milestone, LR data
+Epoch 12: train:99.42 val:92.14 test:69.55 (64 frames) 55.46 (250 frames)
+checkpoints-2020-03-01-00-30-53
+MODEL = I3D
+LR = 0.0001
+BATCH_SIZE = 16
+STRIDE = 2
+CLIP_SIZE = 64
+
+Note: center sampled, LR data
+Epoch 12: train:99.70 val:93.29 test: 67.70
+checkpoints-2020-03-01-00-30-54
+MODEL = I3D
+LR = 0.0001
+BATCH_SIZE = 8
+STRIDE = 4
+CLIP_SIZE = 64
+
