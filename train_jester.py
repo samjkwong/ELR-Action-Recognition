@@ -240,7 +240,7 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
 # ------------------------------------- HELPERS ------------------------------------------
 def get_dataloaders(model_num, root, stride, clip_size, batch_size, train_split, val_split, labels):
     print('Getting training dataset...')
-    num_workers = 16
+    num_workers = 8
 
     def single(trans):
         train_dataset = Jester_Dataset(root, split_file=train_split, labels=labels,
