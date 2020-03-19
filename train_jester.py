@@ -69,7 +69,7 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
         i3d_hr.cuda()
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         if torch.cuda.device_count() > 1:
-            i3d_hr = nn.DataParallel(i3d)
+            i3d_hr = nn.DataParallel(i3d_hr)
         i3d_hr.to(device)
 
     if model_num != 1:
@@ -89,11 +89,15 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
         i3d_lr.cuda()
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         if torch.cuda.device_count() > 1:
-            i3d_lr = nn.DataParallel(i3d)
+            i3d_lr = nn.DataParallel(i3d_lr)
         i3d_lr.to(device)
      
-    
-    optimizer = optim.Adam(i3d.parameters(), lr=init_lr)
+    if model_num == 0: 
+        optimizer = optim.Adam(i3d_lr.parameters(), lr=init_lr)
+    elif model_num == 1:
+        optimizer = optim.Adam(i3d_hr.parameters(), lr=init_lr)
+    else:
+        optimizer = optim.Adam(list(i3d_hr.parameters()) + list(i3d_lr.parameters()), lr=init_lr)
     #lr_sched = optim.lr_scheduler.MultiStepLR(optimizer, [30], gamma=0.1)
 
     steps = 1
@@ -119,30 +123,82 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
 
         for phase in ['train', 'val']:
             if phase == 'train':
-                i3d.train(True)
+                if model_num == 0:
+                    i3d_lr.train(True)
+                elif model_num == 1:
+                    i3d_hr.train(True)
+                else:
+                    i3d_hr.train(False)
+                    i3d_lr.train(True)
                 print('-'*10, 'TRAINING', '-'*10)
             else:
-                i3d.train(False)  # set model to evaluate mode
+                if model_num == 0:
+                    i3d_lr.train(False)
+                elif model_num == 1:
+                    i3d_hr.train(False)
+                else:
+                    i3d_hr.train(False)
+                    i3d_lr.train(False)
                 print('-'*10, 'VALIDATION', '-'*10)
             
             print('Entering data loading...')
             num_correct = 0
             for i, data in enumerate(dataloaders[phase]):
-                inputs, labels = data
-                t = inputs.shape[2]
-                inputs = inputs.to(device=device)
-                labels = labels.to(device=device)
-                if phase == 'train':
-                    per_frame_logits = i3d(inputs)
+                if model_num == 0:
+                    inputs, labels = data
+                    inputs = inputs.to(device=device)
+                    labels = labels.to(device=device)
+                    if phase == 'train':
+                        per_frame_logits = i3d_lr(inputs)
+                    else:
+                        with torch.no_grad():
+                            per_frame_logits = i3d_lr(inputs)
+                if model_num == 1:
+                    inputs, labels = data
+                    inputs = inputs.to(device=device)
+                    labels = labels.to(device=device)
+                    if phase == 'train':
+                        per_frame_logits = i3d_hr(inputs)
+                    else:
+                        with torch.no_grad():
+                            per_frame_logits = i3d_hr(inputs)
+                if model_num == 2:
+                    inputs_hr, inputs_lr, labels = data
+                    inputs_hr = inputs_hr.to(device=device)
+                    inputs_lr = inputs_lr.to(device=device)
+                    labels = labels.to(device=device)
+                    if phase == 'train':
+                        with torch.no_grad():
+                            per_frame_logits_hr = i3d_hr(inputs_hr)
+                        per_frame_logits_lr = i3d_lr(inputs_lr)
+                    else:
+                        with torch.no_grad():
+                            per_frame_logits_hr = i3d_hr(inputs_hr)
+                            per_frame_logits_lr = i3d_lr(inputs_lr)
+                
+
+                if model_num < 2:
+                    mean_frame_logits = torch.mean(per_frame_logits, dim=2) # shape: B x Classes; avg across frames to get single pred per clip
+                    _, pred_class_idx = torch.max(mean_frame_logits, dim=1) # shape: B; values are class indices
                 else:
-                    with torch.no_grad():
-                        per_frame_logits = i3d(inputs)
-
-                mean_frame_logits = torch.mean(per_frame_logits, dim=2) # shape: B x Classes; avg across frames to get single pred per clip
-                _, pred_class_idx = torch.max(mean_frame_logits, dim=1) # shape: B; values are class indices
+                    mean_frame_logits_hr = torch.mean(per_frame_logits_hr, dim=2)
+                    _, pred_class_idx_hr = torch.max(mean_frame_logits_hr, dim=1)
+                    mean_frame_logits_lr = torch.mean(per_frame_logits_lr, dim=2)
+                    _, pred_class_idx_lr = torch.max(mean_frame_logits_lr, dim=1)
 
                 if phase == 'train':
-                    loss = F.cross_entropy(mean_frame_logits, labels)
+                    if model_num < 2:
+                        loss = F.cross_entropy(mean_frame_logits, labels)
+                    else:
+                        hr_ce_loss = F.cross_entropy(mean_frame_logits_hr, labels)
+                        lr_ce_loss = F.cross_entropy(mean_frame_logits_lr, labels)
+                        mean_frame_logits_hr = torch.nn.LogSoftmax(dim=1)(mean_frame_logits_hr)
+                        mean_frame_logits_lr = torch.nn.Softmax(dim=1)(mean_frame_logits_lr)
+                        kl_loss = torch.nn.KLDivLoss(reduction='batchmean')(mean_frame_logits_hr, mean_frame_logits_lr)
+
+                        c1 = 1
+                        c2 = 1
+                        loss = c1*lr_ce_loss + c2*kl_loss
                     writer.add_scalar('loss/train', loss, steps)
                     optimizer.zero_grad()
                     loss.backward()
@@ -182,29 +238,54 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
 # ------------------------------------- HELPERS ------------------------------------------
 def get_dataloaders(model_num, root, stride, clip_size, batch_size, train_split, val_split, labels):
     print('Getting training dataset...')
+    num_workers = 16
 
-    if model_num == 1: # HR branch
-        trans = transforms.Compose([transforms.Resize((224,224)),
-                                    transforms.ToTensor()
-                                   ])
-    else: # LR baseline or KD model
-        trans = transforms.Compose([transforms.Resize((12,16)),
-                                    transforms.Resize((224,224)),
-                                    transforms.ToTensor()
-                                   ])
-    train_dataset = Jester_Dataset(root, split_file=train_split, labels=labels,
-                                   clip_size=clip_size, stride=stride, is_val=False, transform=trans)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
-                                                   shuffle=True, num_workers=8, pin_memory=True)
-    print('Getting validation dataset...')
+    def single(trans):
+        train_dataset = Jester_Dataset(root, split_file=train_split, labels=labels,
+                                       clip_size=clip_size, stride=stride, is_val=False, transform=trans)
+        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
+                                                       shuffle=True, num_workers=num_workers, pin_memory=True)
+        print('Getting validation dataset...')
+        
+        val_dataset = Jester_Dataset(root, split_file=val_split, labels=labels,
+                                     clip_size=clip_size, stride=stride, is_val=True, transform=trans)
+        val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size,
+                                                     shuffle=False, num_workers=num_workers, pin_memory=True)    
+
+        dataloaders = {'train': train_dataloader, 'val': val_dataloader}
+        return dataloaders
     
-    val_dataset = Jester_Dataset(root, split_file=val_split, labels=labels,
-                                 clip_size=clip_size, stride=stride, is_val=True, transform=trans)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size,
-                                                 shuffle=False, num_workers=8, pin_memory=True)    
+    def pair(trans_hr, trans_lr):
+        train_dataset = Jester_Dataset(root, split_file=train_split, labels=labels,
+                                       clip_size=clip_size, stride=stride, is_val=False, transform=trans_lr, transform_hr=trans_hr, is_kd=True)
+        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
+                                                       shuffle=True, num_workers=num_workers, pin_memory=True)
+        print('Getting validation dataset...')
+        
+        val_dataset = Jester_Dataset(root, split_file=val_split, labels=labels,
+                                     clip_size=clip_size, stride=stride, is_val=True, transform=trans_lr, transform_hr=trans_hr, is_kd=True)
+        val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size,
+                                                     shuffle=False, num_workers=num_workers, pin_memory=True)    
 
-    dataloaders = {'train': train_dataloader, 'val': val_dataloader}
+        dataloaders = {'train': train_dataloader, 'val': val_dataloader}
+        return dataloaders
+
+    trans_lr = transforms.Compose([transforms.Resize((12,16)),
+                                transforms.Resize((224,224)),
+                                transforms.ToTensor()
+                               ])
+    trans_hr = transforms.Compose([transforms.Resize((224,224)),
+                                transforms.ToTensor()
+                               ])
+    if model_num == 0:
+        dataloaders = single(trans_lr)
+    elif model_num == 1:
+        dataloaders = single(trans_hr)
+    else:
+        dataloaders = pair(trans_hr=trans_hr, trans_lr=trans_lr)
+    
     return dataloaders
+
 
 def save_checkpoint(model, optimizer, loss, save_dir, epoch, steps, best_epoch, best_acc):
     """Saves checkpoint of model weights during training."""

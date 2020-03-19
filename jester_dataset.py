@@ -21,8 +21,8 @@ def default_loader(path):
 class Jester_Dataset(torch.utils.data.Dataset):
 
     def __init__(self, root, split_file, labels, clip_size,
-                 stride, is_val, transform=None,
-                 loader=default_loader):
+                 stride, is_val, transform=None, transform_hr=None,
+                 loader=default_loader, is_kd=False):
         self.dataset_object = Jester_Parsing(split_file, labels, root)
 
         self.csv_data = self.dataset_object.csv_data
@@ -30,28 +30,40 @@ class Jester_Dataset(torch.utils.data.Dataset):
         self.classes_dict = self.dataset_object.classes_dict
         self.root = root
         self.transform = transform
+        self.transform_hr = transform_hr
         self.loader = loader
 
         self.clip_size = clip_size
         self.stride = stride 
         self.is_val = is_val
+        self.is_kd = is_kd
 
     def __getitem__(self, index):
         item = self.csv_data[index]
         img_paths = self.get_frame_names(item.path)
 
-        imgs = []
+        imgs = [] # could be either LR or HR images
+        if self.is_kd: # need to get additional HR images for HR branch (in addition to imgs which holds LR)
+            imgs_hr = []
+        
         for img_path in img_paths:
             img = self.loader(img_path)
             img = self.transform(img)
+            if self.is_kd:
+                imgs_hr.append(torch.unsqueeze(self.transform_hr(img), 0))
             imgs.append(torch.unsqueeze(img, 0))
 
         target_idx = self.classes_dict[item.label]
 
         # format to torch
-        imgs = torch.cat(imgs)
-        imgs = data.permute(1, 0, 2, 3)
-        return (imgs, target_idx)
+        data = torch.cat(imgs)
+        data = data.permute(1, 0, 2, 3)
+        if self.is_kd:
+            data_hr = torch.cat(imgs_hr)
+            data_hr = data_hr.permute(1, 0, 2, 3)
+            return (data_hr, data, target_idx)
+        else:
+            return (data, target_idx)
 
     def __len__(self):
         return len(self.csv_data)
