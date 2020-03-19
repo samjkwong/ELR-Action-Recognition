@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
+* Contributor: Samuel Kwong
 * Script to train cross-resolution knowledge distillation
 * Backbone model: I3D
 * Dataset: UCF-101-ELR
 * Example usage: python train_i3d_kl.py --lr=1e-4 --bs=16 --stride=1 --clip_size=64 --ckpt_hr=models/baseline-ucf-hr.pt --ckpt_lr=''
-* Contributor: Samuel Kwong
 """
 
 import os

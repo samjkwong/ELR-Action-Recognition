@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-* Script to train baseline on UCF-101-ELR
+* Contributor: Samuel Kwong
+* Script to train low-resolution baseline on UCF-101-ELR
 * Backbone model: I3D
 * Dataset: UCF-101-ELR
 * Example usage: python train_ucf_lr.py --lr=1e-4 --bs=16 --stride=1 --clip_size=64 --checkpoint_path=''
-* Contributor: Samuel Kwong
 """
 
 import os

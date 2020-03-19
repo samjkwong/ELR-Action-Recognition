@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-* Script to train baseline on UCF-101
+* Contributor: Samuel Kwong
+* Script to train high-resolution branch on UCF-101
 * Backbone model: I3D
 * Dataset: UCF-101
 * Example usage: python train_ucf_hr.py --lr=1e-4 --bs=16 --stride=1 --clip_size=64 --checkpoint_path=''
-* Contributor: Samuel Kwong
 """
 
 import os
