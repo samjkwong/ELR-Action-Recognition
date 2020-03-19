@@ -128,7 +128,7 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
                 elif model_num == 1:
                     i3d_hr.train(True)
                 else:
-                    i3d_hr.train(False)
+                    i3d_hr.train(False) # freeze pre-trained HR branch
                     i3d_lr.train(True)
                 print('-'*10, 'TRAINING', '-'*10)
             else:
@@ -195,16 +195,14 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
                         mean_frame_logits_hr = torch.nn.LogSoftmax(dim=1)(mean_frame_logits_hr)
                         mean_frame_logits_lr = torch.nn.Softmax(dim=1)(mean_frame_logits_lr)
                         kl_loss = torch.nn.KLDivLoss(reduction='batchmean')(mean_frame_logits_hr, mean_frame_logits_lr)
-
-                        c1 = 1
-                        c2 = 1
+                        c1, c2 = 1, 1
                         loss = c1*lr_ce_loss + c2*kl_loss
                     writer.add_scalar('loss/train', loss, steps)
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
                     if steps % 10 == 0:
-                        print('Epoch {} Step {} {} loss: {:.4f}'.format(epoch, steps, phase, loss))
+                        print('epoch {} step {} loss: {:.4f}'.format(epoch, steps, loss))
                     steps += 1
                     
                 # metrics for validation
@@ -219,15 +217,19 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
                 print('-' * 50)
                 print('{} accuracy: {:.4f}'.format(phase, accuracy))
                 print('-' * 50)
-                save_checkpoint(i3d, optimizer, loss, save_dir, epoch, steps, best_epoch, best_acc) # save checkpoint after epoch!
-                print('Epoch {} elapsed time: {}'.format(epoch, time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
+                if model_num == 0 or model_num == 2:
+                    save_checkpoint(i3d_lr, optimizer, loss, save_dir, epoch, steps, best_epoch, best_acc) # save checkpoint after epoch!
+                else:
+                    save_checkpoint(i3d_hr, optimizer, loss, save_dir, epoch, steps, best_epoch, best_acc) # save checkpoint after epoch!
+                print('epoch {} elapsed time: {}'.format(epoch, time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
             else:
                 writer.add_scalar('accuracy/val', accuracy, epoch)
-                print('{} accuracy: {:.4f}'.format(phase, accuracy))
-                print('Validation elapsed time: {}'.format(epoch, time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
                 if accuracy > best_acc:
                     best_epoch = epoch
                     best_acc = accuracy
+                print('{} accuracy: {:.4f}'.format(phase, accuracy))
+                print('best accuracy: epoch {}: {}'.format(best_epoch, best_acc)) 
+                print('val elapsed time: {}'.format(epoch, time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
             # --------------------------------------------------------------------
         
         #lr_sched.step() # step after epoch
