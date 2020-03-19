@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 * Contributor: Samuel Kwong
-* Example usage: python eval_i3d.py --bs=4 --stride=1 --clip_size=250 --num_workers=8 --checkpoint_path=models/baseline-ucf.pt
+* Example usage: python test_ucf_lr.py --bs=16 --stride=1 --clip_size=128 --num_workers=8 --checkpoint_path=models/baseline-ucf-lr.pt
 """
 
 import os
@@ -105,7 +105,7 @@ def test(root, batch_size, stride, clip_size, test_split, num_workers):
 # ------------------------------------- HELPERS ------------------------------------------
 def get_dataloader(root, stride, clip_size, batch_size, test_split, num_workers):
     print('Getting testing dataset...')
-    test_transforms = transforms.Compose([transforms.Resize((12,16)),
+    test_transforms = transforms.Compose([transforms.Resize((6,8)),
                                           transforms.Resize((224,224)),
                                           transforms.ToTensor()
                                          ])

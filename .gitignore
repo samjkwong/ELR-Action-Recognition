@@ -1,4 +1,5 @@
 checkpoints*
+ckpts_ucf
 runs*
 __pycache__
 *.swp

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
 * Contributor: Samuel Kwong
-* Example usage: python train_i3d_kl.py --lr=1e-4 --bs=16 --stride=1 --clip_size=64 --ckpt_hr='' --ckpt_lr=''
+* Script to train cross-resolution knowledge distillation
+* Backbone model: I3D
+* Dataset: UCF-101-ELR
+* Example usage: python train_i3d_kl.py --lr=1e-4 --bs=16 --stride=1 --clip_size=64 --ckpt_hr=models/baseline-ucf-hr.pt --ckpt_lr=''
 """
 
 import os
@@ -145,7 +148,7 @@ def train(init_lr, root, batch_size, save_dir, stride, clip_size, num_epochs, tr
 
                     #loss = hr_ce_loss + lr_ce_loss + kl_loss
                     c1 = 1
-                    c2 = 10
+                    c2 = 1.25
                     loss = c1*lr_ce_loss + c2*kl_loss
 
                     writer.add_scalar('loss/train', loss, steps)
@@ -193,7 +196,7 @@ def get_dataloaders(root, stride, clip_size, batch_size, train_split, val_split)
                                             transforms.ToTensor()
                                             ])
     train_dataset = UCF_HLR_Dataset(root, split_file=train_split, clip_size=clip_size, stride=stride, is_val=False, lr_transform=train_lr_transforms, hr_transform=train_hr_transforms)
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
     print('Getting validation dataset...')
     test_lr_transforms = transforms.Compose([transforms.Resize((12,16)),
                                           transforms.Resize((224,224)),
@@ -203,7 +206,7 @@ def get_dataloaders(root, stride, clip_size, batch_size, train_split, val_split)
                                             transforms.ToTensor()
                                             ])
     val_dataset = UCF_HLR_Dataset(root, split_file=val_split, clip_size=clip_size, stride=stride, is_val=True, lr_transform=test_lr_transforms, hr_transform=test_hr_transforms)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)    
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)    
 
     dataloaders = {'train': train_dataloader, 'val': val_dataloader}
     return dataloaders
