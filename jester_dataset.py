@@ -85,9 +85,10 @@ class Jester_Dataset(torch.utils.data.Dataset):
         elif num_frames_necessary < num_frames:
             # if there are more frames, sample starting offset
             diff = (num_frames - num_frames_necessary)
-            # temporal augmentation
             if not self.is_val:
-                offset = np.random.randint(0, diff)
+                offset = np.random.randint(0, diff) # temporal augmentation
+            else:
+                offset = diff // 2 # center sample
         frame_names = frame_names[offset:num_frames_necessary+offset:self.stride]
         return frame_names
 
