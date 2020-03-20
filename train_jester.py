@@ -116,12 +116,12 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
     
     # ------------------------- TRAIN ------------------------------
     for epoch in range(start_epoch, num_epochs):
-        start_time = time.time()
         print('-' * 50)
         print('EPOCH {}/{}'.format(epoch, num_epochs))
         print('-' * 50)
 
         for phase in ['train', 'val']:
+            start_time = time.time()
             if phase == 'train':
                 if model_num == 0:
                     i3d_lr.train(True)
