@@ -104,12 +104,12 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
     start_epoch = 1
     best_epoch, best_acc = 1, 0.0
     if model_num != 1 and args.ckpt_lr:
-        steps = torch.load(args.ckpt_lr)['steps']
-        start_epoch = torch.load(args.ckpt_lr)['epoch']
+        steps += torch.load(args.ckpt_lr)['steps']
+        start_epoch += torch.load(args.ckpt_lr)['epoch']
         best_epoch, best_acc = torch.load(args.ckpt_lr)['best']
     if model_num == 1 and args.ckpt_hr:
-        steps = torch.load(args.ckpt_hr)['steps']
-        start_epoch = torch.load(args.ckpt_hr)['epoch']
+        steps += torch.load(args.ckpt_hr)['steps']
+        start_epoch += torch.load(args.ckpt_hr)['epoch']
         best_epoch, best_acc = torch.load(args.ckpt_hr)['best']
 
     # ----------------------------------------------------------------
