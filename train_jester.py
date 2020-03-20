@@ -76,7 +76,7 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
         print('Loading LR model...')
         i3d_lr = InceptionI3d(400, in_channels=3)
         if args.ckpt_lr:
-            i3d_hr.replace_logits(101)
+            i3d_lr.replace_logits(101)
             state_dict = torch.load(args.ckpt_lr)['model_state_dict']
             checkpoint = OrderedDict()
             for k, v in state_dict.items():
