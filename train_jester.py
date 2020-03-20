@@ -229,7 +229,7 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
                     best_acc = accuracy
                 print('{} accuracy: {:.4f}'.format(phase, accuracy))
                 print('best accuracy: epoch {}: {}'.format(best_epoch, best_acc)) 
-                print('val elapsed time: {}'.format(epoch, time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
+                print('val elapsed time: {}'.format(time.strftime("%H:%M:%S", time.gmtime(elapsed_time))))
             # --------------------------------------------------------------------
         
         #lr_sched.step() # step after epoch
