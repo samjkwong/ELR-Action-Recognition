@@ -50,7 +50,9 @@ class Jester_Dataset(torch.utils.data.Dataset):
             img = self.loader(img_path)
             img = self.transform(img)
             if self.is_kd:
-                imgs_hr.append(torch.unsqueeze(self.transform_hr(img), 0))
+                img_hr = self.loader(img_path)
+                img_hr = self.transform_hr(img_hr)
+                imgs_hr.append(torch.unsqueeze(img_hr, 0))
             imgs.append(torch.unsqueeze(img, 0))
 
         target_idx = self.classes_dict[item.label]

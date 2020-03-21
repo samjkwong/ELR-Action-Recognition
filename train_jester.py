@@ -206,7 +206,10 @@ def train(model_num, init_lr, batch_size, stride, clip_size, num_epochs, save_di
                     steps += 1
                     
                 # metrics for validation
-                num_correct += torch.sum(pred_class_idx == labels, axis=0)
+                if model_num == 2:
+                    num_correct += torch.sum(pred_class_idx_lr == labels, axis=0)
+                else:
+                    num_correct += torch.sum(pred_class_idx == labels, axis=0)
         
             # ----------------------- EVALUATE ACCURACY ---------------------------
             num_total = len(dataloaders[phase].dataset)
