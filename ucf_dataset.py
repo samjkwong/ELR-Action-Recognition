@@ -54,12 +54,13 @@ class UCF_Dataset(torch.utils.data.Dataset):
                 if self.is_kd:
                     img_hr = self.loader(img_path)
                     img_hr = self.transform_hr(img_hr)
-                    imgs_hr.append(torch.unsqueeze(img_hr, 0))
                     prev_img_hr = img_hr
             except: # corrupted/empty file
                 img = prev_img
                 img_hr = prev_img_hr
             imgs.append(torch.unsqueeze(img, 0))
+            if self.is_kd:
+                imgs_hr.append(torch.unsqueeze(img_hr, 0))
 
         # format to torch
         data = torch.cat(imgs)
