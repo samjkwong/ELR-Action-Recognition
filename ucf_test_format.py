@@ -1,6 +1,6 @@
 """
-    * Adds class idx label to each line representing a video sample, to match train/val split file format
-    * Writes to test_split.txt
+* Adds class idx label to each line representing a video sample, to match train split file format
+* Writes to ucf_test_split.txt
 """
 
 import os
@@ -15,8 +15,8 @@ with open(os.path.join(root, 'classInd.txt'), 'r') as f:
 with open(os.path.join(root, 'testlist01.txt'), 'r') as f:
     lines = f.readlines()
 
-if os.path.exists('test_split.txt'):
-    os.remove('test_split.txt')
-with open('test_split.txt', 'w') as f:
+if os.path.exists('ucf_test_split.txt'):
+    os.remove('ucf_test_split.txt')
+with open('ucf_test_split.txt', 'w') as f:
     for line in lines:
         f.write(line.strip('\n') + ' ' + class_to_idx[line.split('/')[0]] + '\n')
